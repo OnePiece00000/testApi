@@ -10,9 +10,13 @@ import android.os.Build;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.util.Log;
+import android.widget.Toast;
+
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
+
+import java.util.Date;
 import java.util.List;
 
 
@@ -39,6 +43,8 @@ public class UseTimeDataManager {
     //记录打开一次应用，使用的activity详情
     private ArrayList<OneTimeDetails> mOneTimeDetailList = new ArrayList<>();
 
+    JSONObject vcjsonObject = new JSONObject();
+    String lastjsonArray = "";
     //记录某一次打开应用的使用情况（查询某一次使用情况的时候，用于界面显示）
     private OneTimeDetails mOneTimeDetails;
 
@@ -89,6 +95,67 @@ public class UseTimeDataManager {
 //        sendEventBus();
         return 0;
     }
+
+    /*
+     * 主要的数据获取函数
+     *
+     * @param 查询startTime 到 endTime  时间戳直接的数据
+     * @return int 0 : event usage 均查询到了
+     * 1 : event 未查询到 usage 查询到了
+     * 2 : event usage 均未查询到
+     */
+    String todayDate = "";
+    public String refreshData(long startTime,long endTime) {
+       // long startTime = System.currentTimeMillis() - 4 * DateTransUtils.DAY_IN_MILLIS;
+       // long endTime = System.currentTimeMillis();
+        long curentTime = System.currentTimeMillis();
+
+        if (endTime > curentTime) {
+            Log.d(TAG,"when startTime > currentTime set current time to starttime");
+            endTime = curentTime;
+        }
+
+        if (endTime < startTime) {
+            Log.d(TAG,"set time error endtime > starttime");
+            return "";
+        }
+
+        int toCurrent = (int)((curentTime - endTime) / DateTransUtils.DAY_IN_MILLIS);
+        int n = (int)((endTime - startTime) / DateTransUtils.DAY_IN_MILLIS);
+        Log.d(TAG,"hejiangzhou n = " + n + "toCurrent = " + toCurrent);
+
+        for (int i = 0 ; i < n; i++) {
+            todayDate = DateTransUtils.stampToDate(endTime - i * DateTransUtils.DAY_IN_MILLIS);
+            refreshData(i + toCurrent);
+            getJsonObjectStr();
+        }
+        //Log.d (TAG,"hejiangzhou = " + vcjsonObject.toString());
+        return vcjsonObject.toString();
+    }
+
+//    public int refreshData(long startTime,long endTime) {
+//            mEventList = EventUtils.getEventList(mContext, startTime, endTime);
+//            mStatsList = EventUtils.getUsageList(mContext, startTime, endTime);
+//
+//            if (mEventList == null || mEventList.size() == 0) {
+//                Log.i(TAG, " UseTimeDataManager-refreshData()   未查到events");
+//
+//                if (mStatsList == null || mStatsList.size() == 0) {
+//                    Log.i(TAG, " UseTimeDataManager-refreshData()   未查到stats");
+//                    return 2;
+//                }
+//                return 1;
+//            }
+//
+//            //获取数据之后，进行数据的处理
+//            mEventListChecked = getEventListChecked();
+//            refreshOneTimeDetailList(0);
+//            refreshPackageInfoList();
+////        sendEventBus();
+//            return 0;
+//    }
+
+
 
     //分类完成，初始化主界面所用到的数据
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -192,7 +259,6 @@ public class UseTimeDataManager {
             endTime = DateTransUtils.getZeroClockTimestamp(System.currentTimeMillis() - (dayNumber - 1) * DateTransUtils.DAY_IN_MILLIS) - 1;
             startTime = endTime - DateTransUtils.DAY_IN_MILLIS + 1;
         }
-
         return EventUtils.getUsageList(mContext, startTime, endTime);
     }
 
@@ -437,29 +503,40 @@ public class UseTimeDataManager {
         }
         return null;
     }
+
+
 	public String getJsonObjectStr() {
         String jsonAppdeTails = "";
         try {
             List<PackageInfo> packageInfos = mUseTimeDataManager.getmPackageInfoListOrderByTime();
-            JSONObject jsonObject2 = new JSONObject();
+            //JSONObject jsonObject2 = new JSONObject();
             JSONArray jsonArray = new JSONArray();
             for (int i = 0; i < packageInfos.size(); i++) {
                 try {
                     JSONObject jsonObject = new JSONObject();
                     jsonArray.put(i, jsonObject.accumulate("count", packageInfos.get(i).getmUsedCount()));
                     jsonArray.put(i, jsonObject.accumulate("name", packageInfos.get(i).getmPackageName()));
-                    jsonArray.put(i, jsonObject.accumulate("time", packageInfos.get(i).getmUsedTime()));
+                    jsonArray.put(i, jsonObject.accumulate("useDuration", packageInfos.get(i).getmUsedTime()));
                     jsonArray.put(i, jsonObject.accumulate("appname", packageInfos.get(i).getmAppName()));
+                    jsonArray.put(i, jsonObject.accumulate("type",1));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
  
             }
-            jsonObject2.put("details", jsonArray);
-            jsonAppdeTails = jsonObject2.toString();
+            //jsonObject2.put("details", jsonArray);
+            Log.d(TAG,"hejiangzhou lastjsonArray = " + lastjsonArray + " jsonArray.toString() = " + jsonArray.toString());
+            if (lastjsonArray != null && lastjsonArray.equals(jsonArray.toString())){
+                return "";
+            }
+            vcjsonObject.put(todayDate,jsonArray);
+            jsonAppdeTails = vcjsonObject.toString();
+            lastjsonArray = jsonArray.toString();
         } catch (JSONException e) {
             e.printStackTrace();
         }
         return jsonAppdeTails;
     }
+
+
 }

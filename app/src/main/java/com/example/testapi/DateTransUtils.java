@@ -16,7 +16,7 @@ public class DateTransUtils {
      */
     public static String stampToDate(String stamp){
         String res;
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         long lt = new Long(stamp);
         Date date = new Date(lt);
         res = simpleDateFormat.format(date);
@@ -24,7 +24,7 @@ public class DateTransUtils {
     }
     public static String stampToDate(long stamp){
         String res;
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date date = new Date(stamp);
         res = simpleDateFormat.format(date);
         return res;
@@ -40,6 +40,22 @@ public class DateTransUtils {
         long todayStamp = cal.getTimeInMillis();
 
         Log.i("DateTransUtils"," DateTransUtils-getTodayStartStamp()  获取当日" + hour+ ":" + minute+ ":" + second+ "的时间戳 :" + todayStamp);
+
+        return todayStamp;
+    }
+
+    public static long getStartStamp(int year,int month,int day,int hour,int minute,int second){
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(System.currentTimeMillis());
+        cal.set(Calendar.YEAR,year);
+        cal.set(Calendar.MONTH,month);
+        cal.set(Calendar.DAY_OF_MONTH,day);
+        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.set(Calendar.MINUTE, minute);
+        cal.set(Calendar.SECOND, second);
+        long todayStamp = cal.getTimeInMillis();
+
+        Log.i("DateTransUtils"," DateTransUtils-getTodayStartStamp()  获取" + year + ":" + month + ":" + day + ":" + hour+ ":" + minute+ ":" + second+ "的时间戳 :" + todayStamp);
 
         return todayStamp;
     }
